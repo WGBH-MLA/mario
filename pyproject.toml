@@ -1,0 +1,80 @@
+[project]
+name = "sonyci"
+description = "The Pipeline Runner"
+authors = [{ name = "WGBH-MLA", email = "ryan_harbert@wgbh.org" }]
+dependencies = ["sonyci", "redis>=4.5.5", "rq>=1.15.0"]
+requires-python = ">=3.7"
+readme = "README.md"
+license = { text = "MIT" }
+dynamic = ["version"]
+
+[project.scripts]
+mario = "mario.__main__:app"
+
+[project.optional-dependencies]
+test = [
+    "pytest~=7.3",
+    "pytest-vcr~=1.0",
+    "pytest-cov~=4.0",
+    "pytest-sugar~=0.9",
+    "pytest-xdist~=3.2",
+]
+cli = ["typer[all]>=0.9.0", "trogon>=0.3.0"]
+cli-ci = ["typer>=0.9.0", "trogon>=0.3.0"]
+docs = [
+    "mkdocs~=1.4",
+    "mkdocs-material~=9.1",
+    "mkdocs-git-revision-date-localized-plugin~=1.2",
+    "mike",
+    "mkdocstrings[python]~=0.21",
+    "mkdocs-jupyter~=0.24",
+]
+
+[build-system]
+requires = ["pdm-backend"]
+build-backend = "pdm.backend"
+
+[tool.pdm]
+version = { source = "file", path = "mario/_version.py" }
+
+[tool.pdm.dev-dependencies]
+dev = ["ruff~=0.0", "black~=23.3", "pre-commit~=2.21"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+markers = ["no_ci: marks tests to skip on CI"]
+
+[tool.coverage.run]
+omit = ["tests/*"]
+
+[tool.ruff.flake8-quotes]
+inline-quotes = "single"
+
+[tool.ruff]
+select = [
+    "B", # flake8-bugbear
+    "C4", # flake8-comprehensions
+    "C90", # mccabe
+    "E", # pycodestyle errors
+    "ERA", # eradicate
+    "F", # pyflakes
+    "I", # isort
+    "INT", # flake8-gettext
+    "N", # pep8-naming
+    "PIE", # flake8-pie,
+    "PLC", # pylint - convention
+    "PLE", # pylint - error
+    "PLW", # pylint - warning
+    "Q", # flake8-quotes
+    "RET", # flake8-return,
+    "RUF", # Ruff-specific rules
+    "SIM", # flake8-simplify
+    "UP", # pyupgrade
+    "W", # pycodestyle warnings
+
+]
+ignore = [
+    "B008", # Do not perform function call in argument defaults
+    "E501", # line too long
+
+]
