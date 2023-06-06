@@ -2,7 +2,7 @@
 name = "sonyci"
 description = "The Pipeline Runner"
 authors = [{ name = "WGBH-MLA", email = "ryan_harbert@wgbh.org" }]
-dependencies = ["sonyci", "redis>=4.5.5", "rq>=1.15.0"]
+dependencies = ["sonyci", "redis>=4.5.5", "rq>=1.15.0", "loguru"]
 requires-python = ">=3.7"
 readme = "README.md"
 license = { text = "MIT" }
@@ -38,7 +38,7 @@ build-backend = "pdm.backend"
 version = { source = "file", path = "mario/_version.py" }
 
 [tool.pdm.dev-dependencies]
-dev = ["ruff~=0.0", "black~=23.3", "pre-commit~=2.21"]
+dev = ["ruff~=0.0", "black~=23.3", "pre-commit~=2.21", "rich"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
