@@ -75,12 +75,31 @@ class Whisper(FlowSpec):
 
         self.next(self.end)
 
+    @kubernetes(
+        image='ghcr.io/wgbh-mla/mario:pr-2',
+        persistent_volume_claims={
+            'media-pvc': '/m',
+        },
+    )
     @step
     def end(self):
-        """Report results"""
-        print(f'Successfully processed {self.guid}')
+        """Report results and cleanup"""
+        from subprocess import run
+
+        from boto3 import client
+
+        run(['ls', '-al', '/m'])
+        # Hack to remove the extension until we fix the guid list
+        filename = self.guid.split('.')[0]
 
         # Upload transcript to aws
+        client = client('s3')
+        client.upload_file(
+            f'/m/{filename}.json',
+            'clams-transcripts',
+            f'{filename}/{self.model}/{filename}.json',
+        )
+        print(f'Successfully processed {self.guid}')
 
         # delete media file and transcripts
 
