@@ -84,6 +84,8 @@ class Whisper(FlowSpec):
     @step
     def end(self):
         """Report results and cleanup"""
+        from glob import glob
+        from os import remove
         from subprocess import run
 
         from boto3 import client
@@ -102,6 +104,11 @@ class Whisper(FlowSpec):
         print(f'Successfully processed {self.guid}')
 
         # delete media file and transcripts
+        cleaned = 0
+        for f in glob(f'/m/{filename}*'):
+            remove(f)
+            cleaned += 1
+        print(f'Cleaned up {cleaned} files')
 
 
 if __name__ == '__main__':
