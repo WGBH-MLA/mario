@@ -53,21 +53,22 @@ class Whisper(FlowSpec):
             'media-pvc': '/m',
             'whisper-models': '/root/.cache/whisper/',
         },
+        gpu=1,
     )
     @step
     def whisper(self):
         """Run the transcript through Whisper"""
-        from os.path import join
+        from shutil import copy
         from subprocess import run
 
-        run(['ls', '-al', '/m'])
+        copy(f'/m/{self.guid}', '/')
         self.cmd = [
             'whisper',
             '--model',
             self.model,
             '-o',
             '/m',
-            f'/m/{self.guid}',
+            f'/{self.guid}',
         ]
         print('Running:', self.cmd)
         run(self.cmd, check=True)
