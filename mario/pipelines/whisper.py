@@ -34,14 +34,15 @@ class Whisper(FlowSpec):
             )
         assert self.asset_id, f'No asset found for {self.guid}'
         print(f'Found asset {self.asset_id}')
-        # run(f'ci download {self.asset_id} -o {join("/m", self.guid)}', shell=True)
+        # run(f'ci download {self.asset_id} -o {join("/m", self.guid)}')
         ci = SonyCi(**SonyCi.from_env())
         self.asset = ci.get(f'assets/{self.asset_id}')
-        self.proxy = [p for p in self.asset['proxies'] if p['type'] == 'video-sd']
-        assert len(self.proxy) == 1, f'No proxy found for {self.asset_id}'
-        print('Downloading proxy', self.proxy)
-        urlretrieve(self.proxy[0]['location'], join('/m', self.guid))
-        print('Downloaded proxy')
+
+        url = self.asset['proxyUrl']
+        print('Downloading file')
+        urlretrieve(url, join('/m', self.guid))
+
+        print('Downloaded file')
         run(['ls', '-al', '/m'])
 
         self.next(self.whisper)
