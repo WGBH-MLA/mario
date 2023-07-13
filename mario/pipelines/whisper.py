@@ -92,14 +92,16 @@ class Whisper(FlowSpec):
 
         run(['ls', '-al', '/m'])
         # Hack to remove the extension until we fix the guid list
-        filename = self.guid.split('.')[0]
+        filename = '.'.join(self.guid.split('.')[:-1])
+        s3_path = f'{filename.split(".")[0]}/{self.model}/{filename.split(".")[0]}.json'
 
         # Upload transcript to aws
+        print(f'Uploading {filename} to {s3_path}')
         client = client('s3')
         client.upload_file(
             f'/m/{filename}.json',
             'clams-transcripts',
-            f'{filename}/{self.model}/{filename}.json',
+            s3_path,
         )
         print(f'Successfully processed {self.guid}')
 
