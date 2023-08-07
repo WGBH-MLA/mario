@@ -35,7 +35,7 @@ class AppBarsdetection(FlowSpec):
 
         assert self.asset_id, f'No asset found for {self.guid}'
         print(f'Found asset {self.asset_id}')
-        filename = join('/m', self.guid + '.mp4')
+        self.filename = join('/m', self.guid + '.mp4')
 
         # get mmif
         self.input_mmif = self.mmif
@@ -43,8 +43,10 @@ class AppBarsdetection(FlowSpec):
             print('No mmif provided, downloading from clams')
             self.input_mmif = post(
                 'http://fastclam/source',
-                json={'files': ['video:' + filename]},
+                json={'files': ['video:' + self.filename]},
             ).json()
+        print('Got mmif')
+        print(self.input_mmif)
         # Download the media file
         # run(f'ci download {self.asset_id} -o {join("/m", self.guid)}')
         ci = SonyCi(**SonyCi.from_env())
@@ -52,14 +54,14 @@ class AppBarsdetection(FlowSpec):
 
         url = self.asset['proxyUrl']
         print('Downloading file')
-        urlretrieve(url, filename)
+        urlretrieve(url, self.filename)
 
         print('Downloaded file')
         run(['ls', '-al', '/m'])
 
         self.next(self.barsdetection)
 
-    @kubernetes(image='ghcr.io/wgbh-mla/mario:main')
+    @kubernetes(image='ghcr.io/wgbh-mla/mario:pr-4')
     @step
     def barsdetection(self):
         """Run the mmif through app-barsdetection"""
@@ -96,19 +98,19 @@ class AppBarsdetection(FlowSpec):
 
         from boto3 import client
 
-        filename = join(self.guid, '.mmif')
+        mmif_filename = join('/m', self.guid + '.mmif')
         s3_path = f'{self.guid}/app-barsdetection/{self.guid}.mmif'
 
-        with open(join('/m', filename), 'w') as f:
+        with open(mmif_filename, 'w') as f:
             f.write(dumps(self.output_mmif))
 
         run(['ls', '-al', '/m'])
 
         # Upload transcript to aws
-        print(f'Uploading {filename} to {s3_path}')
+        print(f'Uploading {mmif_filename} to {s3_path}')
         client = client('s3')
         client.upload_file(
-            join('/m', filename),
+            mmif_filename,
             'clams-transcripts',
             s3_path,
         )
@@ -116,7 +118,7 @@ class AppBarsdetection(FlowSpec):
 
         # delete media file and transcripts
         cleaned = 0
-        for f in glob(f'/m/{filename}*'):
+        for f in glob(f'/m/{self.guid}*'):
             remove(f)
             cleaned += 1
         print(f'Cleaned up {cleaned} files')
