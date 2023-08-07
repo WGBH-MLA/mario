@@ -85,8 +85,9 @@ class AppBarsdetection(FlowSpec):
 
         self.next(self.end)
 
+    @secrets(sources=['CLAMS-chowda-secret'])
     @kubernetes(
-        image='ghcr.io/wgbh-mla/mario:main',
+        image='ghcr.io/wgbh-mla/chowda:main',
         persistent_volume_claims={
             'media-pvc': '/m',
         },
@@ -101,7 +102,20 @@ class AppBarsdetection(FlowSpec):
         from subprocess import run
 
         from boto3 import client
+        from chowda.db import engine
+        from chowda.models import MediaFile
+        from sqlmodel import Session, select
 
+        # Update the database
+        with Session(engine) as db:
+            media_file = db.exec(
+                select(MediaFile).where(MediaFile.guid == self.guid)
+            ).one()
+            media_file.mmif_json = self.output_mmif
+            db.add(media_file)
+            db.commit()
+
+        # Upload to S3
         mmif_filename = join('/m', self.guid + '.mmif')
         s3_path = f'{self.guid}/app-barsdetection/{self.guid}.mmif'
 
