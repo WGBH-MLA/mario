@@ -6,7 +6,10 @@ class AppBarsdetection(FlowSpec):
     """Run a transcript through app-barsdetection"""
 
     guid = Parameter('guid', help='GUID of the transcript to process')
-    mmif = Parameter('mmif', help='GUID of the transcript to process', default=None)
+    mmif = Parameter('mmif', help='Input MMIF to CLAMS app', default=None)
+    bucket = Parameter(
+        'bucket', help='S3 bucket to store results in', default='clams-mmif'
+    )
 
     @secrets(sources=['CLAMS-SonyCi-API', 'CLAMS-chowda-secret'])
     @kubernetes(
@@ -32,10 +35,11 @@ class AppBarsdetection(FlowSpec):
                 select(MediaFile).where(MediaFile.guid == self.guid)
             ).one()
             self.asset_id = media_file.assets[0].id
+            self.filename = media_file.assets[0].name
 
         assert self.asset_id, f'No asset found for {self.guid}'
         print(f'Found asset {self.asset_id}')
-        self.filename = join('/m', self.guid + '.mp4')
+        filename = join('/m', self.filename)
 
         # get mmif
         self.input_mmif = self.mmif
@@ -43,7 +47,7 @@ class AppBarsdetection(FlowSpec):
             print('No mmif provided, downloading from clams')
             self.input_mmif = post(
                 'http://fastclam/source',
-                json={'files': ['video:' + self.filename]},
+                json={'files': ['video:' + filename]},
             ).json()
         print('Got mmif')
         print(self.input_mmif)
@@ -54,14 +58,14 @@ class AppBarsdetection(FlowSpec):
 
         url = self.asset['proxyUrl']
         print('Downloading file')
-        urlretrieve(url, self.filename)
+        urlretrieve(url, filename)
 
         print('Downloaded file')
         run(['ls', '-al', '/m'])
 
         self.next(self.barsdetection)
 
-    @kubernetes(image='ghcr.io/wgbh-mla/mario:pr-4')
+    @kubernetes(image='ghcr.io/wgbh-mla/mario:main')
     @step
     def barsdetection(self):
         """Run the mmif through app-barsdetection"""
@@ -111,7 +115,7 @@ class AppBarsdetection(FlowSpec):
         client = client('s3')
         client.upload_file(
             mmif_filename,
-            'clams-transcripts',
+            self.bucket,
             s3_path,
         )
         print(f'Successfully processed {self.guid}')
