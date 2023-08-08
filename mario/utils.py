@@ -5,6 +5,10 @@ from mario.config import MEDIA_DIR
 from mario.log import log
 
 
+class CLAMSAppError(Exception):
+    """Error raised when a CLAMS app fails to run"""
+
+
 def rm(filename: str):
     """
     Remove a file from the media directory.
