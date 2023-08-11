@@ -1,7 +1,12 @@
 from metaflow import FlowSpec, Parameter, kubernetes, secrets, step, trigger
 
 
-@trigger(event='app-barsdetection')
+@trigger(
+    event={
+        'name': 'app-barsdetection',
+        'parameters': {'guid': 'guid', 'mmif': 'mmif', 'bucket': 'bucket'},
+    }
+)
 class AppBarsdetection(FlowSpec):
     """Run a transcript through app-barsdetection"""
 
@@ -43,7 +48,7 @@ class AppBarsdetection(FlowSpec):
 
         # get mmif
         self.input_mmif = self.mmif
-        if not self.mmif:
+        if not self.mmif or self.mmif == 'null':
             print('No mmif provided, downloading from clams')
             self.input_mmif = post(
                 'http://fastclam/source',
@@ -125,11 +130,12 @@ class AppBarsdetection(FlowSpec):
         run(['ls', '-al', '/m'])
 
         # Upload transcript to aws
-        print(f'Uploading {mmif_filename} to {s3_path}')
+        bucket = self.bucket if self.bucket != 'null' else 'clams-mmif'
+        print(f'Uploading {mmif_filename} to {bucket} {s3_path}')
         client = client('s3')
         client.upload_file(
             mmif_filename,
-            self.bucket,
+            bucket,
             s3_path,
         )
         print(f'Successfully processed {self.guid}')
