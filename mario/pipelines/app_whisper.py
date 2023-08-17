@@ -33,6 +33,7 @@ class AppWhisper(FlowSpec):
             ).one()
             self.asset_id = media_file.assets[0].id
             self.filename = media_file.assets[0].name
+            self.mmif = media_file.mmif_json
 
         assert self.asset_id, f'No asset found for {self.guid}'
         print(f'Found asset {self.asset_id}')
@@ -47,10 +48,15 @@ class AppWhisper(FlowSpec):
 
         print('Downloaded file!')
         run(['ls', '-al', '/m'])
-        self.mmif = post(
-            'http://fastclam/source',
-            json={'files': ['video:' + filename]},
-        ).json()
+
+        # get mmif
+        if not self.mmif:
+            print('No mmif provided, downloading from clams')
+            self.mmif = post(
+                'http://fastclam/source',
+                json={'files': ['video:' + filename]},
+            ).json()
+
         self.next(self.whisper)
 
     @kubernetes()
@@ -65,8 +71,9 @@ class AppWhisper(FlowSpec):
 
         self.next(self.end)
 
+    @secrets(sources=['CLAMS-chowda-secret'])
     @kubernetes(
-        image='ghcr.io/wgbh-mla/mario:main',
+        image='ghcr.io/wgbh-mla/chowda:main',
         persistent_volume_claims={
             'media-pvc': '/m',
         },
@@ -81,6 +88,18 @@ class AppWhisper(FlowSpec):
         from subprocess import run
 
         from boto3 import client
+        from chowda.db import engine
+        from chowda.models import MediaFile
+        from sqlmodel import Session, select
+
+        # Update the database
+        with Session(engine) as db:
+            media_file = db.exec(
+                select(MediaFile).where(MediaFile.guid == self.guid)
+            ).one()
+            media_file.mmif_json = self.output_mmif
+            db.add(media_file)
+            db.commit()
 
         run(['ls', '-al', '/m'])
         mmif_filename = join('/m', self.guid + '.mmif')
