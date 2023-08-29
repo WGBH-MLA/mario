@@ -1,8 +1,6 @@
-from metaflow import FlowSpec, Parameter, kubernetes, secrets, step, trigger, current
+from metaflow import FlowSpec, Parameter, kubernetes, secrets, step, trigger
+
 from utils import PipelineUtils
-from sqlmodel import Session, select
-from chowda.models import MediaFile, MetaflowRun, Batch
-from chowda.db import engine
 
 
 @trigger(event='pipeline')
@@ -23,35 +21,12 @@ class Pipeline(FlowSpec, PipelineUtils):
 
     @secrets(sources=['CLAMS-SonyCi-API', 'CLAMS-chowda-secret'])
     @kubernetes(
-        image='ghcr.io/wgbh-mla/chowda:main',
+        image='ghcr.io/wgbh-mla/chowda:pr-134',
         persistent_volume_claims={'media-pvc': '/m'},
     )
     @step
     def start(self):
         """Download the media file and initiliaze the mmif"""
-
-        # TODO: minimize DB queries, we're looking up the MediaFile in this context
-        # manager, and then later with self.get_asset_id().
-        with Session(engine) as db:
-            # Fetch the Media File record from Chowda.
-            media_file = db.exec(
-                select(MediaFile).where(MediaFile.guid == self.guid)
-            ).one()
-
-            # Store Sony Ci Asset ID and the Filename for next steps in this flow
-            self.asset_id = media_file.assets[0].id
-            self.filename = media_file.assets[0].name
-
-            # Fetch the Batch from Chowda
-            batch = db.exec(select(Batch).where(Batch.id == self.batch_id)).one()
-
-            # Create new MetaflowRun object in Chowda DB, linking MediaFile,
-            # Batch, and the actual Metaflow Run ID
-            new_metaflow_run = MetaflowRun(
-                id=current.run_id, batch=batch, media_file=media_file
-            )
-            db.add(new_metaflow_run)
-            db.commit()
 
         self.get_asset_id()
         assert self.asset_id, f'No asset found for {self.guid}'

@@ -2,12 +2,13 @@ class PipelineUtils:
     """Utility functions for CLAMS Pipeline Runner"""
 
     def get_asset_id(self):
+        from chowda.db import engine
+        from chowda.models import Batch, MediaFile, MetaflowRun
+        from metaflow import current
+        from sqlmodel import Session, select
+
         """Get the asset.id + filename for a media file"""
         from os.path import join
-
-        from chowda.db import engine
-        from chowda.models import MediaFile
-        from sqlmodel import Session, select
 
         with Session(engine) as db:
             media_file = db.exec(
@@ -17,6 +18,16 @@ class PipelineUtils:
             self.asset_name = media_file.assets[0].name
             self.type = media_file.assets[0].type.value.lower()
             self.filename = join('/m', self.asset_name)
+
+            # Add the Metaflow Run to the database
+            batch = db.get(Batch, self.batch_id)
+            pathspec = current.flow_name + '/' + current.run_id
+            print(f'Adding {current.run_id} to {batch.name} with {pathspec}')
+            new_metaflow_run = MetaflowRun(
+                id=current.run_id, batch=batch, media_file=media_file, pathspec=pathspec
+            )
+            db.add(new_metaflow_run)
+            db.commit()
 
     def get_mmif(self):
         from requests import post
