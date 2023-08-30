@@ -57,7 +57,6 @@ class AppBarsdetection(FlowSpec):
         print('Got mmif')
         print(self.input_mmif)
         # Download the media file
-        # run(f'ci download {self.asset_id} -o {join("/m", self.guid)}')
         ci = SonyCi(**SonyCi.from_env())
         self.asset = ci.get(f'assets/{self.asset_id}')
 
