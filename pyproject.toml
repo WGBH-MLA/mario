@@ -44,7 +44,13 @@ build-backend = "pdm.backend"
 version = { source = "file", path = "mario/_version.py" }
 
 [tool.pdm.dev-dependencies]
-dev = ["ruff~=0.0", "black~=23.3", "pre-commit~=2.21", "rich"]
+dev = [
+    "ruff~=0.0",
+    "black~=23.3",
+    "pre-commit>=2.21.0",
+    "rich",
+    "ggshield>=1.18.1",
+]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
