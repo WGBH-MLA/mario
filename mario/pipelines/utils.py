@@ -14,8 +14,14 @@ class PipelineUtils:
             media_file = db.exec(
                 select(MediaFile).where(MediaFile.guid == self.guid)
             ).one()
-            self.asset_id = media_file.assets[0].id
-            self.asset_name = media_file.assets[0].name
+            assets = [
+                asset
+                for asset in media_file.assets
+                if asset.name.endswith(('.mp4', '.mp3'))
+            ]
+            assert assets, f'No {self.media_type} asset found for {self.guid}'
+            self.asset_id = assets[0].id
+            self.asset_name = assets[0].name
             self.type = media_file.assets[0].type.value.lower()
             self.filename = join('/m', self.asset_name)
 

@@ -1,5 +1,4 @@
 from metaflow import FlowSpec, Parameter, kubernetes, secrets, step, trigger
-
 from utils import PipelineUtils
 
 
@@ -21,7 +20,7 @@ class Pipeline(FlowSpec, PipelineUtils):
 
     @secrets(sources=['CLAMS-SonyCi-API', 'CLAMS-chowda-secret'])
     @kubernetes(
-        image='ghcr.io/wgbh-mla/chowda:pr-134',
+        image='ghcr.io/wgbh-mla/chowda:main',
         persistent_volume_claims={'media-pvc': '/m'},
     )
     @step
