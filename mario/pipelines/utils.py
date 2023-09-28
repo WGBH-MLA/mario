@@ -14,16 +14,6 @@ class PipelineUtils:
             media_file = db.exec(
                 select(MediaFile).where(MediaFile.guid == self.guid)
             ).one()
-            assets = [
-                asset
-                for asset in media_file.assets
-                if asset.name.endswith(('.mp4', '.mp3'))
-            ]
-            assert assets, f'No {self.media_type} asset found for {self.guid}'
-            self.asset_id = assets[0].id
-            self.asset_name = assets[0].name
-            self.type = media_file.assets[0].type.value.lower()
-            self.filename = join('/m', self.asset_name)
 
             # Add the Metaflow Run to the database
             batch = db.get(Batch, self.batch_id)
@@ -35,7 +25,31 @@ class PipelineUtils:
             db.add(new_metaflow_run)
             db.commit()
 
-    def get_mmif(self):
+            # Filter for media assets
+            assets = [
+                asset
+                for asset in media_file.assets
+                if asset.name.endswith(('.mp4', '.mp3'))
+            ]
+            assert assets, f'No media assets found for {self.guid}'
+            asset = assets[0]
+            self.asset_id = asset.id
+            self.asset_name = asset.name
+            self.type = asset.type.value.lower()
+            self.filename = join('/m', self.asset_name)
+
+    def get_mmif_from_database(self):
+        from chowda.db import engine
+        from chowda.models import MediaFile
+        from sqlmodel import Session, select
+
+        with Session(engine) as db:
+            media_file = db.exec(
+                select(MediaFile).where(MediaFile.guid == self.guid)
+            ).one()
+            return media_file.mmif_json
+
+    def create_new_mmif(self):
         from requests import post
 
         self.input_mmif = post(
