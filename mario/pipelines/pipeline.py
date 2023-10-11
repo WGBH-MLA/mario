@@ -1,5 +1,4 @@
 from metaflow import FlowSpec, Parameter, kubernetes, secrets, step, trigger
-
 from utils import PipelineUtils
 
 
@@ -21,7 +20,7 @@ class Pipeline(FlowSpec, PipelineUtils):
 
     @secrets(sources=['CLAMS-SonyCi-API', 'CLAMS-chowda-secret'])
     @kubernetes(
-        image='ghcr.io/wgbh-mla/chowda:pr-134',
+        image='ghcr.io/wgbh-mla/chowda:main',
         persistent_volume_claims={'media-pvc': '/m'},
     )
     @step
@@ -34,9 +33,13 @@ class Pipeline(FlowSpec, PipelineUtils):
 
         self.input_mmif = self.mmif
         if not self.mmif or self.mmif == 'null':
-            print('No mmif provided, downloading from clams', self.type)
-            self.get_mmif()
-            print('Got mmif')
+            print('No mmif provided, checking database for existing mmif')
+            self.input_mmif = self.get_mmif_from_database()
+            if not self.input_mmif:
+                print('No mmif found, creating new mmif')
+                self.input_mmif = self.create_new_mmif()
+        assert self.input_mmif, 'Problem getting mmif'
+        print('Got mmif')
         print(self.input_mmif)
 
         self.download_media_file()
