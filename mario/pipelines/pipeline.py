@@ -33,7 +33,7 @@ class Pipeline(FlowSpec, PipelineUtils):
         assert self.asset_id, f'No asset found for {self.guid}'
         print(f'Found asset {self.asset_id}')
 
-        if self.mmif_location:
+        if self.mmif_location != 'null':
             print('Downloading mmif from', self.mmif_location)
             self.input_mmif = self.download_mmif(self.mmif_location)
         else:

@@ -25,14 +25,10 @@ class PipelineUtils:
             db.add(new_metaflow_run)
             db.commit()
 
-            # Filter for media assets
-            assets = [
-                asset
-                for asset in media_file.assets
-                if asset.name.endswith(('.mp4', '.mp3'))
-            ]
-            assert assets, f'No media assets found for {self.guid}'
-            asset = assets[0]
+            assert media_file.assets, f'No media assets found for {self.guid}'
+            # Get the first asset. This is ok, because we are now filtering
+            # SonyCiAssets on ingest, so they should all be media.
+            asset = media_file.assets[0]
             self.asset_id = asset.id
             self.asset_name = asset.name
             self.type = asset.type.value.lower()
@@ -41,7 +37,7 @@ class PipelineUtils:
     def create_new_mmif(self) -> dict:
         from requests import post
 
-        self.input_mmif = post(
+        return post(
             'http://fastclam/source',
             json={'files': [f'{self.type}:' + self.filename]},
         ).json()
