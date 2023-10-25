@@ -1,3 +1,10 @@
+"""Utility functions for CLAMS Pipeline Runner"""
+
+# Parameter values that should be treated as None. This is necessary
+# because falsy values show up differently when called via CLI vs argo
+NUNS = (None, 'null', '')
+
+
 class PipelineUtils:
     """Utility functions for CLAMS Pipeline Runner"""
 
@@ -96,13 +103,13 @@ class PipelineUtils:
 
         from boto3 import client
 
-        bucket = self.bucket if self.bucket != 'null' else 'clams-mmif'
+        bucket = self.bucket if self.bucket not in NUNS else 'clams-mmif'
         client = client('s3')
         response = client.get_object(Bucket=bucket, Key=s3_path)
         body = response['Body'].read().decode('utf-8')
         return loads(body)
 
-    def upload_mmif(self) -> None:
+    def upload_mmif(self, s3_path: str) -> None:
         """Upload the output mmif to S3"""
         from json import dumps
         from os.path import join
@@ -110,7 +117,6 @@ class PipelineUtils:
         from boto3 import client
 
         mmif_filename = join('/m', self.guid + '.mmif')
-        s3_path = f'{self.guid}/{self.batch_id}/{self.guid}.mmif'
 
         with open(mmif_filename, 'w') as f:
             f.write(dumps(self.output_mmif))
@@ -124,6 +130,7 @@ class PipelineUtils:
             bucket,
             s3_path,
         )
+        print('Uploaded mmif!')
 
     def cleanup(self) -> None:
         """delete media file and transcripts"""

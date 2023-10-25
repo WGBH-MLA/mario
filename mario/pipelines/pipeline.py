@@ -1,5 +1,5 @@
 from metaflow import FlowSpec, Parameter, kubernetes, secrets, step, trigger
-from utils import PipelineUtils
+from utils import NUNS, PipelineUtils
 
 
 @trigger(event='pipeline')
@@ -33,7 +33,7 @@ class Pipeline(FlowSpec, PipelineUtils):
         assert self.asset_id, f'No asset found for {self.guid}'
         print(f'Found asset {self.asset_id}')
 
-        if self.mmif_location != 'null':
+        if self.mmif_location not in NUNS:
             print('Downloading mmif from', self.mmif_location)
             self.input_mmif = self.download_mmif(self.mmif_location)
         else:
@@ -73,8 +73,9 @@ class Pipeline(FlowSpec, PipelineUtils):
     @step
     def end(self):
         """Upload the results to S3 and Chowda, cleanup files"""
-        self.update_database()
-        self.upload_mmif()
+        self.s3_path = f'{self.guid}/{self.batch_id}/{self.guid}.mmif'
+        self.update_database(self.s3_path)
+        self.upload_mmif(self.s3_path)
         self.cleanup()
         print(f'Successfully processed {self.guid}')
 
