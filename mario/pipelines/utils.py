@@ -27,7 +27,12 @@ class PipelineUtils:
             pathspec = current.flow_name + '/' + current.run_id
             print(f'Adding {current.run_id} to {batch.name} with {pathspec}')
             new_metaflow_run = MetaflowRun(
-                id=current.run_id, batch=batch, media_file=media_file, pathspec=pathspec
+                id=current.run_id,
+                batch=batch,
+                media_file=media_file,
+                pathspec=pathspec,
+                current_step=current.step_name,
+                current_task=current.task_id,
             )
             db.add(new_metaflow_run)
             db.commit()
