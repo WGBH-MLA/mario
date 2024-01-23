@@ -1,5 +1,5 @@
 from metaflow import FlowSpec, Parameter, kubernetes, secrets, step, trigger
-from utils import PipelineUtils
+from utils import NUNS, PipelineUtils
 
 
 @trigger(event='pipeline')
@@ -7,7 +7,9 @@ class Pipeline(FlowSpec, PipelineUtils):
     """Run a MediaFile through a CLAMS pipeline"""
 
     guid = Parameter('guid', help='GUID of the transcript to process')
-    mmif = Parameter('mmif', help='Input MMIF to CLAMS app', default=None)
+    mmif_location = Parameter(
+        'mmif_location', help='S3 location of input MMIF to CLAMS app', default=None
+    )
     pipeline = Parameter(
         'pipeline', help='List of CLAMS apps to run media through', separator=','
     )
@@ -31,13 +33,12 @@ class Pipeline(FlowSpec, PipelineUtils):
         assert self.asset_id, f'No asset found for {self.guid}'
         print(f'Found asset {self.asset_id}')
 
-        self.input_mmif = self.mmif
-        if not self.mmif or self.mmif == 'null':
-            print('No mmif provided, checking database for existing mmif')
-            self.input_mmif = self.get_mmif_from_database()
-            if not self.input_mmif:
-                print('No mmif found, creating new mmif')
-                self.input_mmif = self.create_new_mmif()
+        if self.mmif_location not in NUNS:
+            print('Downloading mmif from', self.mmif_location)
+            self.input_mmif = self.download_mmif(self.mmif_location)
+        else:
+            print('No mmif provided. Sourcing new mmif')
+            self.input_mmif = self.create_new_mmif()
         assert self.input_mmif, 'Problem getting mmif'
         print('Got mmif')
         print(self.input_mmif)
@@ -58,7 +59,6 @@ class Pipeline(FlowSpec, PipelineUtils):
             print(f'Running {app}')
             mmif = self.app(app, mmif)
             print(f'{app} done')
-            print(mmif)
         self.output_mmif = mmif
         print(f'Finished pipeline of {len(self.pipeline)} apps!')
         self.next(self.end)
@@ -73,8 +73,9 @@ class Pipeline(FlowSpec, PipelineUtils):
     @step
     def end(self):
         """Upload the results to S3 and Chowda, cleanup files"""
-        self.update_database()
-        self.upload_s3()
+        self.s3_path = f'{self.guid}/{self.batch_id}/{self.guid}.mmif'
+        self.update_database(self.s3_path)
+        self.upload_mmif(self.s3_path)
         self.cleanup()
         print(f'Successfully processed {self.guid}')
 
