@@ -46,6 +46,22 @@ class PipelineUtils:
             self.type = asset.type.value.lower()
             self.filename = join('/m', self.asset_name)
 
+    def get_mmif_from_database(self):
+        from chowda.db import engine
+        from chowda.models import MediaFile
+        from sqlmodel import Session, select
+
+        with Session(engine) as db:
+            media_file = db.exec(
+                select(MediaFile).where(MediaFile.guid == self.guid)
+            ).one()
+            # TODO Ensure this gets the most recent mmif
+            location = media_file.mmifs[-1].mmif_location
+        # get the mmif from the S3 bucket
+        if not location:
+            raise ValueError(f'No mmif found for {self.guid}')
+        return self.download_mmif_from_s3(location)
+
     def create_new_mmif(self) -> dict:
         from requests import post
 
@@ -121,7 +137,7 @@ class PipelineUtils:
 
         from boto3 import client
 
-        mmif_filename = join('/m', self.guid + '.mmif')
+        mmif_filename = join(self.guid + '.mmif')
 
         with open(mmif_filename, 'w') as f:
             f.write(dumps(self.output_mmif))
@@ -136,6 +152,32 @@ class PipelineUtils:
             s3_path,
         )
         print('Uploaded mmif!')
+        return s3_path
+
+    def download_mmif_from_s3(self, s3_path: str):
+        from json import loads
+        from os import remove
+        from os.path import join
+
+        from boto3 import client
+
+        bucket = self.bucket if self.bucket != 'null' else 'clams-mmif'
+        mmif_filename = join(self.guid + '.mmif')
+
+        print(f'Downloading {s3_path} to {mmif_filename}')
+        s3_client = client('s3')
+        s3_client.download_file(
+            bucket,
+            s3_path,
+            mmif_filename,
+        )
+
+        with open(mmif_filename) as file:
+            file_contents = file.read()
+
+        remove(mmif_filename)
+
+        return loads(file_contents)
 
     def cleanup(self) -> None:
         """delete media file and transcripts"""
