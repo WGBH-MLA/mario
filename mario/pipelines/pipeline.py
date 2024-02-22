@@ -74,8 +74,8 @@ class Pipeline(FlowSpec, PipelineUtils):
     def end(self):
         """Upload the results to S3 and Chowda, cleanup files"""
         self.s3_path = f'{self.guid}/{self.batch_id}/{self.guid}.mmif'
-        self.update_database(self.s3_path)
         self.upload_mmif(self.s3_path)
+        self.update_database(self.s3_path)
         self.cleanup()
         print(f'Successfully processed {self.guid}')
 
