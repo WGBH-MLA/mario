@@ -1,0 +1,42 @@
+version: 2
+updates:
+  # Docker
+  - package-ecosystem: docker
+    directory: /
+    schedule:
+      interval: weekly
+      day: friday
+      time: '14:00'
+      timezone: US/Eastern
+    labels:
+      - maintenance 🔧
+    commit-message:
+      prefix: ⬆
+  # Python
+  - package-ecosystem: pip
+    directory: /
+    groups:
+      python-packages:
+        patterns:
+          - '*'
+    schedule:
+      interval: weekly
+      day: friday
+      time: '14:00'
+      timezone: US/Eastern
+    commit-message:
+      prefix: ⬆
+    labels:
+      - maintenance 🔧
+  # GitHub Actions
+  - package-ecosystem: github-actions
+    directory: .github/workflows
+    schedule:
+      interval: weekly
+      day: friday
+      time: '14:00'
+      timezone: US/Eastern
+    commit-message:
+      prefix: ⬆
+    labels:
+      - maintenance 🔧
