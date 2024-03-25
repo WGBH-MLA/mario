@@ -189,3 +189,24 @@ class PipelineUtils:
             remove(f)
             cleaned += 1
         print(f'Cleaned up {cleaned} files')
+
+    def clean_pipeline(self) -> list:
+        """Clean pipeline strings
+
+        This is needed to restore `&` characters replaced by `\u0026` in the pipeline Parameter,
+        which is a result of ArgoEvent's parsing of the pipeline URL string as a body payload parameter,
+        which is written to the Argo-workflow kubernetes resource using `| toJson`,
+        which wraps the GoLang `json.Marshal` function, which escapes `&`, `<`, and `>` characters to HTML safe unicode.
+        This shows up as "\\u0026" in the python string.
+
+        See https://github.com/WGBH-MLA/chowda/issues/204
+        """
+
+        return [
+            app.replace('\\u0026', '&')
+            .replace('\\u0028', '(')
+            .replace('\\u0029', ')')
+            .replace('\\u003c', '<')
+            .replace('\\u003e', '>')
+            for app in self.pipeline
+        ]
