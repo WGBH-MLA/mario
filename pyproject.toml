@@ -5,8 +5,8 @@ authors = [{ name = "WGBH-MLA", email = "ryan_harbert@wgbh.org" }]
 dependencies = [
     "sonyci[cli]~=0.2",
     "loguru~=0.7",
-    "metaflow~=2.11",
-    "kubernetes~=29.0",
+    "metaflow~=2.12",
+    "kubernetes~=31.0",
     "boto3~=1.33",
 ]
 requires-python = ">=3.7"
@@ -45,7 +45,7 @@ version = { source = "file", path = "mario/_version.py" }
 
 [tool.pdm.dev-dependencies]
 dev = [
-    "ruff~=0.3",
+    "ruff~=0.6",
     "black~=23.3",
     "pre-commit~=2.21",
     "rich~=12.5",
