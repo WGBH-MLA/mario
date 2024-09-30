@@ -1,11 +1,11 @@
-FROM python
+FROM python:3.12-slim
+RUN apt update && apt install -y git ffmpeg
+RUN pip install -U pip
+RUN pip install git+https://github.com/openai/whisper.git
 
 WORKDIR /app
-
-COPY pyproject.toml README.md ./
+COPY pyproject.toml pyproject.toml
 COPY mario mario
+RUN pip install .
 
-RUN pip install . rich
-
-
-CMD ["rq", "worker", "-u", "redis://redis/0"]
+ENTRYPOINT [ "/app/mario/pipelines/runner.py"]
