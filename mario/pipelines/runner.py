@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 
 from mario.models import Job
+from mario.auth import login
+from mario.log import log
 
 # This script is used to run the pipeline for the project
 # It will run the following steps:
@@ -10,25 +12,45 @@ from mario.models import Job
 # 3. Upload the results to the server
 # 4. Cleanup
 
+
+def checkout_job():
+    log.info('Checking out a job from the queue')
+    return Job(id=1, media_url='http://media.com/file1.mp4')
+
+
 def download(job: Job):
-    print("Downloading the file", job)
+    log.info(f'Downloading the file, {job}')
+
 
 def run_whisper(job: Job):
-    print("Running whisper", job)
+    log.info('Running whisper', job)
+
+
+def upload(job: Job):
+    log.info(f'Uploading the results to the server {job}')
+
+
+def cleanup():
+    log.info('Cleaning up the pipeline')
 
 
 def main():
-    print("Checking out a job from the queue")
-    job = Job(id=1, media_url= 'http://media.com/file1.mp4')
-    print("Downloading the file")
+    log.info("It's a me! Mario!")
+
+    login()
+
+    job = checkout_job()
+
     download(job)
 
     run_whisper(job)
 
-    print("Uploading the results to the server")
+    upload(job)
 
-    print("Pipeline is complete")
+    cleanup()
+
+    log.success('Pipeline is complete')
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     main()
