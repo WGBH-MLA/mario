@@ -6,6 +6,6 @@ RUN pip install git+https://github.com/openai/whisper.git
 WORKDIR /app
 COPY pyproject.toml README.md ./
 COPY mario mario
-RUN pip install .
+RUN pip install .[whisper]
 
 ENTRYPOINT [ "/app/mario/pipelines/runner.py"]

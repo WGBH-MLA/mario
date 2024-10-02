@@ -4,13 +4,32 @@ from mario.models import Job
 from mario.auth import login
 from mario.log import log
 
-# This script is used to run the pipeline for the project
-# It will run the following steps:
-# 0. Checkout a job from the queue
-# 1. Download the file
-# 2. Run whisper
-# 3. Upload the results to the server
-# 4. Cleanup
+
+def create_pipeline(model_id: str = "ylacombe/whisper-large-v3-turbo"):
+    import torch
+    from transformers import AutoModelForSpeechSeq2Seq, AutoProcessor, pipeline
+
+    log.info('Creating the pipeline')
+    device = "cuda:0" if torch.cuda.is_available() else "cpu"
+    torch_dtype = torch.float16 if torch.cuda.is_available() else torch.float32
+
+    model = AutoModelForSpeechSeq2Seq.from_pretrained(
+        model_id, torch_dtype=torch_dtype, low_cpu_mem_usage=True, use_safetensors=True
+    )
+    model.to(device)
+    processor = AutoProcessor.from_pretrained(model_id)
+
+    pipe = pipeline(
+        "automatic-speech-recognition",
+        model=model,
+        tokenizer=processor.tokenizer,
+        feature_extractor=processor.feature_extractor,
+        torch_dtype=torch_dtype,
+        device=device,
+        return_timestamps=True,
+    )
+    log.info('Pipeline created successfully')
+    return pipe
 
 
 def checkout_job():
@@ -18,36 +37,22 @@ def checkout_job():
     return Job(id=1, media_url='http://media.com/file1.mp4')
 
 
-def download(job: Job):
-    log.info(f'Downloading the file, {job}')
-
-
-def run_whisper(job: Job):
-    log.info('Running whisper', job)
-
-
-def upload(job: Job):
+def upload(job: Job, result: dict):
     log.info(f'Uploading the results to the server {job}')
-
-
-def cleanup():
-    log.info('Cleaning up the pipeline')
 
 
 def main():
     log.info("It's a me! Mario!")
 
+    pipe = create_pipeline()
+
     login()
 
     job = checkout_job()
 
-    download(job)
+    result = pipe(job.media_url)
 
-    run_whisper(job)
-
-    upload(job)
-
-    cleanup()
+    upload(job, result)
 
     log.success('Pipeline is complete')
 
