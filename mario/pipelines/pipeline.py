@@ -53,9 +53,9 @@ class Pipeline(FlowSpec, PipelineUtils):
     def run_pipeline(self):
         """Run the mmif through a CLAMS pipeline"""
         mmif = self.input_mmif
-        print('starting pipeline')
-        print(self.pipeline)
-        for app in self.pipeline:
+        pipeline = self.clean_pipeline()
+        print('starting pipeline', pipeline)
+        for app in pipeline:
             print(f'Running {app}')
             mmif = self.app(app, mmif)
             print(f'{app} done')
