@@ -45,7 +45,7 @@ version = { source = "file", path = "mario/_version.py" }
 
 [tool.pdm.dev-dependencies]
 dev = [
-    "ruff~=0.6",
+    "ruff~=0.7",
     "black~=23.3",
     "pre-commit~=2.21",
     "rich~=12.5",
